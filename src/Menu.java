@@ -1,81 +1,23 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-import java.util.HashSet;
+import java.sql.Connection;
+import java.sql.*;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Scanner;
-import java.util.Set;
-public class Menu {
+
+public class Menu  {
+    String url = "jdbc:mysql://localhost:3306/shoppingSystem";
+    String mysqlUsername = "root";//your_username
+    String mysqlPassword = "hsp";//your_password
+    Connection connection;
     Scanner scanner = new Scanner(System.in);
     Admin admin = new Admin();
-    Store[] stores = new Store[100];
-    User[] users = new User[100];
-    Set<Integer> idSet = new HashSet<>();//用于生成唯一ID
-    int usersPoint = 0;
-    int storesPoint = 0;
-    Menu(){
-        for (int i = 0; i < users.length; i++) {
-            users[i] = new User();
+    User user = new User();
+    Menu() throws SQLException {
+        try {
+            connection = DriverManager.getConnection(url, mysqlUsername, mysqlPassword);//链接到数据库
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-        for (int i = 0; i < stores.length; i++) {
-            stores[i] = new Store();
-        }
-        users[usersPoint].userName = "zhouhejun";
-        users[usersPoint].SetUserPassword("Zhj123456.");
-        users[usersPoint].userRegisterDate = "2023-7-14";
-        users[usersPoint].userLevel = "普通用户";
-        users[usersPoint].userID = 106001;
-        idSet.add(106001);
-        users[usersPoint].userEmail = "2428725172@qq.com";
-        users[usersPoint].userPhoneNumber = "19113547971";
-        users[usersPoint].userTotalConsume = 0;
-        usersPoint++;
-        users[usersPoint].userName = "lll";
-        users[usersPoint].SetUserPassword("Zhj12345678.");
-        users[usersPoint].userRegisterDate = "2023-7-14";
-        users[usersPoint].userLevel = "普通用户";
-        users[usersPoint].userID = 106002;
-        idSet.add(106002);
-        users[usersPoint].userEmail = "2428725172@qq.com";
-        users[usersPoint].userPhoneNumber = "13208846858";
-        users[usersPoint].userTotalConsume = 0;
-        usersPoint++;
-        stores[storesPoint].goodsID = "001";
-        stores[storesPoint].goodsName = "洗衣液";
-        stores[storesPoint].manufacturer = "蓝月亮";
-        stores[storesPoint].produceDate= "2023-7-9";
-        stores[storesPoint].modelSize = "1L";
-        stores[storesPoint].purchasePrice = 1;
-        stores[storesPoint].sellPrice = 10;
-        stores[storesPoint].remainNumber = 50;
-        storesPoint++;
-        stores[storesPoint].goodsID = "002";
-        stores[storesPoint].goodsName = "洗面奶";
-        stores[storesPoint].manufacturer = "稀物集";
-        stores[storesPoint].produceDate= "2023-7-13";
-        stores[storesPoint].modelSize = "100ml";
-        stores[storesPoint].purchasePrice = 39;
-        stores[storesPoint].sellPrice = 20;
-        stores[storesPoint].remainNumber = 30;
-        storesPoint++;
-        stores[storesPoint].goodsID = "003";
-        stores[storesPoint].goodsName = "奶茶";
-        stores[storesPoint].manufacturer = "云南大学";
-        stores[storesPoint].produceDate= "2023-7-13";
-        stores[storesPoint].modelSize = "450ml";
-        stores[storesPoint].purchasePrice = 9;
-        stores[storesPoint].sellPrice = 30;
-        stores[storesPoint].remainNumber = 200;
-        storesPoint++;
         System.out.println("************************");
         System.out.println("***欢迎来到网上购物系统！***");
         System.out.println("************************");
@@ -98,12 +40,25 @@ public class Menu {
                 }
                 case 1:{
                     boolean validAdmin = false;
+                    String queryAdmin = "SELECT * FROM Admin WHERE admin='admin'";
+                    // 准备查询语句并执行查询
+                    PreparedStatement preparedStatementAdmin = connection.prepareStatement(queryAdmin);
+                    ResultSet resultSetAdmin = preparedStatementAdmin.executeQuery();
+                    String mysqlAdmin;
+                    String mysqlAdminPassword;
+                    if (resultSetAdmin.next()) {
+                        mysqlAdmin = resultSetAdmin.getString("admin");
+                        mysqlAdminPassword = resultSetAdmin.getString("adminPassword");
+                    } else {
+                        System.out.println("未找到匹配的数据。");
+                        break;
+                    }
                     while (!validAdmin){
                         System.out.print("请输入帐号：");
-                        String account = scanner.next();
+                        String adminAccount = scanner.next();
                         System.out.print("请输入密码：");
-                        String accountPassword = scanner.next();
-                        if (account.equals(admin.admin) && accountPassword.equals(admin.adminPassword)){
+                        String adminPassword = scanner.next();
+                        if (adminAccount.equals(mysqlAdmin) && adminPassword.equals(mysqlAdminPassword)){
                             boolean validAdminSystem = false;
                             System.out.println("欢迎来到管理员系统！");
                             while (!validAdminSystem){
@@ -126,8 +81,8 @@ public class Menu {
                                 int choose2 = scanner.nextInt();
                                 switch (choose2){
                                     case 0:{
-                                        validAdminSystem = true;
-                                        validAdmin = true;
+                                        validAdminSystem = true;//退出管理员界面
+                                        validAdmin = true;//返回到系统页面
                                         break;
                                     }
                                     case 1:{
@@ -135,64 +90,85 @@ public class Menu {
                                         break;
                                     }
                                     case 2:{
-                                        System.out.print("请输入用户ID：");
-                                        int userID = scanner.nextInt();
-                                        int location = SearchUserID(userID);
-                                        if(location>=0){
-                                            admin.UpdateUserPassword(users[location]);
-                                        }else{
-                                            System.out.println("用户ID不存在！");
-                                        }
+                                        admin.UpdateUserPassword();
                                         break;
                                     }
                                     case 3:{
-                                        admin.DisplayUserInformation(users,usersPoint);
+                                        admin.DisplayUserInformation();
                                         break;
                                     }
                                     case 4:{
-                                        if(admin.DeleteUser(users,usersPoint))
-                                            usersPoint--;//删除用户成功后需要将指针减一
+                                        admin.DeleteUser();
                                         break;
                                     }
                                     case 5:{
-                                        System.out.print("请输入用户ID：");
-                                        int userID = scanner.nextInt();
-                                        int location = SearchUserID(userID);
-                                        if(location>=0){
-                                            if(users[location].userLock != 1){
-                                                System.out.println("该用户未被锁定！");
-                                            }else{
-                                                admin.UnlockUser(users[location]);
-                                            }
-                                        }else{
-                                            System.out.println("用户ID不存在！");
-                                        }
+                                        admin.UnlockUser();
                                         break;
                                     }
                                     case 6:{
-                                        admin.SearchUserName(users,usersPoint);
+                                        System.out.print("请输入用户名:");
+                                        String userName = scanner.next();
+                                        if(!admin.QueryUserName(userName)){
+                                            System.out.println("该用户不存在！");
+                                        }else{
+                                            //用户存在
+                                            String queryUserByName = "SELECT * FROM User where username = ?";
+                                            PreparedStatement preparedStatement = connection.prepareStatement(queryUserByName);
+                                            preparedStatement.setString(1,userName);
+                                            ResultSet resultSet = preparedStatement.executeQuery();
+                                            while (resultSet.next()){
+                                                System.out.print("用户ID："+resultSet.getString("userID"));
+                                                System.out.print("\t用户名："+resultSet.getString("username"));
+                                                System.out.print("\t用户级别："+resultSet.getString("userLevel"));
+                                                System.out.print("\t用户注册时间："+resultSet.getString("userRegisterDate"));
+                                                System.out.print("\t累计消费总金额："+resultSet.getFloat("userTotalConsume"));
+                                                System.out.print("\t用户手机号："+resultSet.getString("userPhoneNumber"));
+                                                System.out.println("\t用户邮箱："+resultSet.getString("userEmail"));
+                                            }
+                                            resultSet.close();
+                                            preparedStatement.close();
+                                        }
                                         break;
                                     }
                                     case 7:{
-                                        admin.SearchUserID(users,usersPoint);
+                                        System.out.print("请输入用户ID:");
+                                        String userID = scanner.next();
+                                        if(!admin.QueryUserID(userID)){
+                                            System.out.println("该用户不存在！");
+                                        }else{
+                                            //用户存在
+                                            String queryUserById = "SELECT * FROM User where userID = ?";
+                                            PreparedStatement preparedStatement = connection.prepareStatement(queryUserById);
+                                            preparedStatement.setString(1,userID);
+                                            ResultSet resultSet = preparedStatement.executeQuery();
+                                            if (resultSet.next()){
+                                                System.out.print("用户ID："+resultSet.getString("userID"));
+                                                System.out.print("\t用户名："+resultSet.getString("username"));
+                                                System.out.print("\t用户级别："+resultSet.getString("userLevel"));
+                                                System.out.print("\t用户注册时间："+resultSet.getString("userRegisterDate"));
+                                                System.out.print("\t累计消费总金额："+resultSet.getFloat("userTotalConsume"));
+                                                System.out.print("\t用户手机号："+resultSet.getString("userPhoneNumber"));
+                                                System.out.println("\t用户邮箱："+resultSet.getString("userEmail"));
+                                            }
+                                            resultSet.close();
+                                            preparedStatement.close();
+                                        }
                                         break;
                                     }
                                     case 8:{
-                                        admin.DisplayGoodsInformation(stores,storesPoint);
+                                        admin.DisplayGoodsInformation();
                                         break;
                                     }
                                     case 9:{
-                                        admin.AddGoods(stores,storesPoint);
-                                        storesPoint++;
+                                        admin.AddGoods();
                                         break;
                                     }
                                     case 10:{
-                                        admin.ModifyGoods(stores);
+                                        admin.ModifyGoods();
                                         break;
                                     }
                                     case 11:{
-                                        if(admin.DeleteGoods(stores,storesPoint))
-                                            storesPoint--;//删除商品成功后需要将指针减一
+                                        admin.DeleteGoods();
                                         break;
                                     }
                                     default:{
@@ -210,92 +186,78 @@ public class Menu {
                     }
                     break;
                 }
-                case 2:{
-                    boolean validUser = false;
-                    int userAccount = 0;
-                    while (!validUser){
-                        boolean validID = false;
-                        while (!validID) {
-                            System.out.print("请输入用户帐号ID：");
-                            if (scanner.hasNextInt()) {
-                                userAccount = scanner.nextInt();
-                                validID = true;
-                            } else {
-                                System.out.println("输入无效，请重新输入ID。");
-                                scanner.next(); // 清除非数字输入
-                            }
-                        }
-                        int location = SearchUserAccount(userAccount);
-                        if(location>=0){
-                            users[location].Login();
-                            if(users[location].judgeLogin==1){//登录成功了
-                                boolean validUserSystem = false;
-                                while (!validUserSystem){
-                                    //2.2用户界面
-                                    System.out.println("==============================");
-                                    System.out.println("=======1.密码管理==========");
-                                    System.out.println("=======2.购物车管理============");
-                                    System.out.println("=======3.个人信息===============");
-                                    System.out.println("=======0.退出登录===================");
-                                    System.out.println("===============================");
-                                    System.out.print("请选择：");
-                                    int choose2 = scanner.nextInt();
-                                    switch (choose2){
-                                        case 0:{
-                                            validUserSystem = true;
-                                            validUser = true;
-                                            users[location].judgeLogin = 0;//退出登录时将判断是否登录的变量置0
-                                            break;
-                                        }
-                                        case 1:{
-                                            users[location].UserPassword();
-                                            if(users[location].changePassword == 1){//重置、修改密码后退出登录
-                                                validUserSystem = true;
-                                                validUser = true;
-                                            }
-                                            break;
-                                        }
-                                        case 2:{
-                                            admin.DisplayGoodsInformation(stores,storesPoint);
-                                            users[location].ShoppingCartController(stores,storesPoint);
-                                            break;
-                                        }
-                                        case 3:{
-                                            users[location].UserInformation();
-                                            break;
-                                        }
-                                    }
+                case 2: {
+                    if (user.Login()) {
+                        boolean validUserSystem = false;
+                        while (!validUserSystem) {
+                            //2.2用户界面
+                            System.out.println("===============================");
+                            System.out.println("=======1.密码管理================");
+                            System.out.println("=======2.购物车管理==============");
+                            System.out.println("=======3.个人信息================");
+                            System.out.println("=======0.退出登录================");
+                            System.out.println("================================");
+                            System.out.print("请选择：");
+                            int choose2 = scanner.nextInt();
+                            switch (choose2) {
+                                case 0: {
+                                    validUserSystem = true;
+                                    user.judgeLogin = 0;//退出登录时将判断是否登录的变量置0
+                                    //更新mysql
+                                    String updateSql = "UPDATE User SET judgeLogin = ? where userID = ?";
+                                    PreparedStatement statementUpdate = connection.prepareStatement(updateSql);
+                                    statementUpdate.setInt(1, user.judgeLogin);
+                                    statementUpdate.setInt(2, user.userID);
+                                    statementUpdate.executeUpdate();
+                                    // 关闭连接
+                                    statementUpdate.close();
+                                    break;
                                 }
-                            }else{
-                                System.out.println("登录失败！");
-                                validUser = true;
-                            }
-                        }else{
-                            System.out.println("用户名错误！是否请重新输入？(y/n)");
-                            String next = scanner.next();
-                            if(next.equals("n")){
-                                validUser = true;
+                                case 1: {
+                                    user.UserPassword();
+                                    if (user.changePassword == 1) {//重置、修改密码后退出登录
+                                        validUserSystem = true;
+                                    }
+                                    break;
+                                }
+                                case 2: {
+                                    System.out.println("所有商品如下：");
+                                    admin.DisplayGoodsInformation();
+                                    user.ShoppingCartController();
+                                    break;
+                                }
+                                case 3: {
+                                    user.UserInformation();
+                                    break;
+                                }
                             }
                         }
+                    } else {
+                        System.out.println("登录失败！");
                     }
                     break;
                 }
                 case 3:{
-                    boolean register = users[usersPoint].Register(idSet);
-                    if(register){
-                        usersPoint++;
-                    }
+                    user.Register();
                     break;
                 }
                 case 4:{
                     System.out.println("****！忘记密码系统！****");
                     boolean invalid = false;
+                    String selectQueryID = "select * from User where userID = ?";
                     while (!invalid){
                         System.out.print("请输入用户ID：");
-                        int userID = scanner.nextInt();
-                        int search = SearchUserID(userID);
-                        if(search != -1){
-                            users[search].ForgetUserPassword();
+                        String userID = scanner.next();
+                        PreparedStatement preparedStatement = connection.prepareStatement(selectQueryID);
+                        preparedStatement.setString(1, userID);
+                        ResultSet resultSet = preparedStatement.executeQuery();
+                        boolean exists = resultSet.next();
+                        if(exists){
+                            //更新user中的信息
+                            user = new User(userID);
+                            user.ForgetUserPassword();
+                            resultSet.close();
+                            preparedStatement.close();
                             break;
                         }else{
                             System.out.print("未找到改用户！是否继续？（y/n）: ");
@@ -304,6 +266,7 @@ public class Menu {
                                 invalid = true;
                             }
                         }
+
                     }
                     break;
                 }
@@ -312,24 +275,6 @@ public class Menu {
                 }
             }
         }
-    }
-
-    int SearchUserAccount(int userName){
-        for (int i = 0;i < usersPoint ;i++){
-            if(users[i].userID == userName){
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    int SearchUserID(int userID){
-        for (int i = 0;i < usersPoint ;i++){
-            if(users[i].userID == userID){
-                return i;
-            }
-        }
-        return -1;
     }
 
 }

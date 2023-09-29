@@ -112,49 +112,7 @@ public class Admin {
             }else {
                 System.out.println("该用户不存在！");
             }
-            /*try {
-                // 执行查询
-                String queryUserID = "SELECT * FROM user WHERE userID = ?";
-                PreparedStatement statement = connection.prepareStatement(queryUserID);
-                statement.setString(1, String.valueOf(updateUserID));
-                ResultSet resultSet = statement.executeQuery();
-                // 判断查询结果
-                if (resultSet.next()) {
-                    // 找到用户
-                    int judgeNewPassword = 0;//用于判断两次密码输入是否一致，一致则结束循环
-                    while (judgeNewPassword != 1){
-                        System.out.print("请输入新密码：");
-                        String newPassword1 = scanner.next();
-                        System.out.print("请确认新密码：");
-                        String newPassword2 = scanner.next();
-                        if(newPassword1.equals(newPassword2)){
-                            String updateUserPassword = "UPDATE User SET userPassword = ? WHERE userID = ?";
-                            PreparedStatement statementUpdate = connection.prepareStatement(updateUserPassword);
-                            statementUpdate.setString(1, newPassword1);
-                            statementUpdate.setString(2, updateUserID);
-                            //检验是否更新成功
-                            statementUpdate.executeUpdate();
-                            statementUpdate.close();
-                            System.out.println("用户 "+updateUserID+" 的新密码修改成功！新密码为："+newPassword1);
-                            judgeNewPassword=1;
-                            return;
-                            //更新用户密码
-                        }
-                        else{
-                            System.out.println("两次密码输入不一致！请重新输入!");
-                        }
-                    }
-                    // 关闭连接
-                    resultSet.close();
-                    statement.close();
-                } else {
-                    System.out.println("该用户不存在！");
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }*/
         }
-        //System.out.println(user.GetUserPassword());
     }
 
     void DisplayUserInformation() throws SQLException {
@@ -197,9 +155,12 @@ public class Admin {
             String judgeDelete = scanner.next();
             if(judgeDelete.equals("y")){
                 String DeleteUserSql = "DELETE FROM User where userID=?";
+                String DeleteShoppingCartSql = "DELETE FROM shoppingCart where userID=?";
+                PreparedStatement preparedStatementShoppingCart = connection.prepareStatement(DeleteShoppingCartSql);
                 PreparedStatement preparedStatement = connection.prepareStatement(DeleteUserSql);
                 preparedStatement.setString(1,userID);
-                if (preparedStatement.executeUpdate()>0){
+                preparedStatementShoppingCart.setString(1,userID);
+                if (preparedStatement.executeUpdate()>0 && preparedStatementShoppingCart.executeUpdate() > 0){
                     System.out.println("删除客户ID："+userID+" 用户的信息成功！");
                 }else{
                     System.out.println("用户删除失败！");
